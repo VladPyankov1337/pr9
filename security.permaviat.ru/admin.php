@@ -1,17 +1,14 @@
 <?php
 	session_start();
-	include("./settings/connect_datebase.php");
-	
-	if (isset($_SESSION['user'])) {
-		if($_SESSION['user'] != -1) {
-			$user_query = $mysqli->query("SELECT * FROM `users` WHERE `id` = ".$_SESSION['user']); // проверяем
-			while($user_read = $user_query->fetch_row()) {
-				if($user_read[3] == 0) header("Location: index.php");
-			}
-		} else header("Location: login.php");
- 	} else {
+
+	if (!isset($_SESSION['user']) || empty($_SESSION['user']) || $_SESSION['user'] == -1) {
 		header("Location: login.php");
-		echo "Пользователя не существует";
+		exit;
+	}
+
+	if (!isset($_SESSION['role']) || $_SESSION['role'] != 1) {
+		header("Location: user.php");
+		exit;
 	}
 ?>
 <!DOCTYPE HTML>
@@ -25,11 +22,10 @@
 	</head>
 	<body>
 		<div class="top-menu">
-
 			<a href=#><img src = "img/logo1.png"/></a>
 			<div class="name">
 				<a href="index.php">
-					<div class="subname">БЗОПАСНОСТЬ  ВЕБ-ПРИЛОЖЕНИЙ</div>
+					<div class="subname">БЕЗОПАСНОСТЬ ВЕБ-ПРИЛОЖЕНИЙ</div>
 					Пермский авиационный техникум им. А. Д. Швецова
 				</a>
 			</div>
@@ -42,6 +38,11 @@
 				<div class="name">Административная панель</div>
 			
 				Административная панель служит для создания, редактирования и удаления записей на сайте.
+
+				<div>
+					<b>Ваш JWT токен:</b><br>
+					<span id="jwt-token-display">Загрузка...</span>
+				</div>
 			
 				<div class="footer">
 					© КГАПОУ "Авиатехникум", 2020
@@ -52,10 +53,21 @@
 		</div>
 		
 		<script>
+			$(document).ready(function() {
+				var token = localStorage.getItem("token");
+				if(token) {
+					$("#jwt-token-display").text(token);
+				} else {
+					$("#jwt-token-display").text("Токен не найден в LocalStorage");
+				}
+			});
+
 			function logout() {
+				localStorage.removeItem("token");
+
 				$.ajax({
 					url         : 'ajax/logout.php',
-					type        : 'POST', // важно!
+					type        : 'POST',
 					data        : null,
 					cache       : false,
 					dataType    : 'html',
